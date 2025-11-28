@@ -1,21 +1,73 @@
-version: '3.8' # Versão do formato Docker Compose
+version: '3.8'
 
 services:
-  # Define o serviço que será o seu servidor remoto simulado
+  # O Servidor para Simulação de Deploy (com Java e SSH)
   ssh_java_server:
-    # 1. Instrução de construção:
-    # O Compose procurará o 'Dockerfile' na pasta atual para construir a imagem.
+    # Constrói a imagem a partir do Dockerfile no diretório atual
     build:
-      context: . # Usa o diretório atual como contexto de construção
-      dockerfile: Dockerfile # O nome do seu Dockerfile (assumido: Dockerfile)
+      context: .
+      dockerfile: Dockerfile
     
-    # 2. Definição do nome do contêiner para fácil identificação
     container_name: remote-deploy-server
     
-    # 3. Mapeamento de portas (simula o acesso remoto):
-    # '2222:22' -> Mapeia a porta 2222 do seu host para a porta 22 do contêiner (SSH)
+    # Mapeia a porta 2222 do host para a porta 22 do contêiner (para SSH)
     ports:
       - "2222:22"
+      # Opcional: Mapeia a porta 8080 do Spring Boot para acesso direto
+      - "8080:8080"
     
-    # 4. Reinicialização (opcional, mas útil)
     restart: unless-stopped
+    
+    # Adiciona o serviço à rede comum
+    networks:
+      - app_network
+    
+    # Opcional: Para persistir o diretório de trabalho do usuário devuser
+    # volumes:
+    #   - ./app_data/devuser_home:/home/devuser
+
+  # O Serviço de Banco de Dados MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      # Credenciais para o Spring Boot se conectar
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: myshop
+      MYSQL_USER: myshopuser
+      MYSQL_PASSWORD: 123456
+    
+    # Opcional: Mapeia a porta 3306 para acesso externo (ex: MySQL Workbench)
+    ports:
+      - "3306:3306"
+      
+    # Garante a persistência dos dados do banco
+    volumes:
+      - mysql_data:/var/lib/mysql
+      
+    networks:
+      - app_network
+
+  # Ferramenta de Administração de Banco de Dados (Web)
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    # Mapeia a porta 8081 do host para acesso ao Adminer
+    ports:
+      - "8081:8080"
+      
+    networks:
+      - app_network
+    # Adminer precisa estar na mesma rede do MySQL
+    depends_on:
+      - mysql
+
+# Definição dos Volumes e Redes
+volumes:
+  mysql_data:
+
+networks:
+  app_network:
+    driver: bridge
