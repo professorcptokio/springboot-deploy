@@ -5,13 +5,12 @@ FROM ubuntu:24.04
 ENV JAVA_HOME /usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH $PATH:$JAVA_HOME/bin
 
-# 1. Atualiza e instala os pacotes necessários
-# openjdk-21-jdk: Substitui o Java 25 pelo Java 21 LTS (versão moderna e estável)
-# openssh-server: Permite a conexão remota (simulação de deploy)
+
 RUN apt-get update && \
     apt-get install -y \
         openssh-server \
-        openjdk-21-jdk \
+        cron \
+        openjdk-25-jdk \
         wget \
         --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
@@ -32,5 +31,7 @@ WORKDIR /home/devuser
 # Exponha a porta 22 para SSH (o Compose fará o mapeamento 2222:22)
 EXPOSE 22
 
-# Comando principal: Inicia o servidor SSH em modo daemon (foreground)
+# Inicia o servidor SSH em foreground como comando padrão
 CMD ["/usr/sbin/sshd", "-D"]
+
+
