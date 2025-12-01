@@ -1,19 +1,14 @@
 version: '3.8'
-
 services:
-  # O Servidor para Simulação de Deploy (com Java e SSH)
   ssh_java_server:
-    # Constrói a imagem a partir do Dockerfile no diretório atual
     build:
       context: .
       dockerfile: Dockerfile
     
     container_name: remote-deploy-server
     
-    # Mapeia a porta 2222 do host para a porta 22 do contêiner (para SSH)
     ports:
-      - "2222:22"
-      # Opcional: Mapeia a porta 8080 do Spring Boot para acesso direto
+      - "2225:2224"
       - "8080:8080"
     
     restart: unless-stopped
@@ -21,54 +16,38 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/myshop?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=myshopuser
       - SPRING_DATASOURCE_PASSWORD=123456
-    
-    # Adiciona o serviço à rede comum
     networks:
       - app_network
-    
-    # Opcional: Para persistir o diretório de trabalho do usuário devuser
-    # volumes:
-    #   - ./app_data/devuser_home:/home/devuser
+   
 
-  # O Serviço de Banco de Dados MySQL
   mysql:
     image: mysql:8.0
     container_name: mysql_db
     restart: always
     environment:
-      # Credenciais para o Spring Boot se conectar
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: myshop
       MYSQL_USER: myshopuser
       MYSQL_PASSWORD: 123456
-    
-    # Opcional: Mapeia a porta 3306 para acesso externo (ex: MySQL Workbench)
     ports:
       - "3306:3306"
-      
-    # Garante a persistência dos dados do banco
     volumes:
       - mysql_data:/var/lib/mysql
-      
     networks:
       - app_network
 
-  # Ferramenta de Administração de Banco de Dados (Web)
   adminer:
     image: adminer
     container_name: adminer
     restart: always
-    # Mapeia a porta 8081 do host para acesso ao Adminer
     ports:
       - "8081:8080"
       
     networks:
       - app_network
-    # Adminer precisa estar na mesma rede do MySQL
     depends_on:
       - mysql
 
-# Definição dos Volumes e Redes
 volumes:
   mysql_data:
 

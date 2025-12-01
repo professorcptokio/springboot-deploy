@@ -25,13 +25,15 @@ RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/
 # A linha abaixo corrige um bug de login em ambientes Docker com SSH
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
+# Configure SSH to listen on port 2222 inside the container (avoid using host port 22)
+RUN sed -i 's/^#Port 22/Port 2224/' /etc/ssh/sshd_config || echo 'Port 2224' >> /etc/ssh/sshd_config
+
 # Define o diretório de trabalho do usuário
 WORKDIR /home/devuser
 
-# Exponha a porta 22 para SSH (o Compose fará o mapeamento 2222:22)
-EXPOSE 22
+# Exponha a porta 2222 para SSH (o Compose fará o mapeamento para uma porta do host)
+EXPOSE 2224
 
-# Inicia o servidor SSH em foreground como comando padrão
-CMD ["/usr/sbin/sshd", "-D"]
-
+# Inicia o serviço SSH e o cron quando o container for iniciado
+CMD service cron start && /usr/sbin/sshd -D
 
